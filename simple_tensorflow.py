@@ -25,4 +25,4 @@ feed_dict = {input_units: data,
 
 with tf.Session() as sess:
     tf.initialize_all_variables().run()
-    print sess.run(loss, feed_dict=feed_dict)
+    print (sess.run(loss, feed_dict=feed_dict))

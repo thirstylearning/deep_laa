@@ -77,7 +77,7 @@ with tf.Session() as sess:
             batch_data, _ = mnist.train.next_batch(batch_size)
             _, batch_cost, batch_recons, batch_z, x_recons, print_z = sess.run([optimizer, loss_all, loss_reconstr, loss_z, x_reconstr_mean, z], feed_dict={x:batch_data})
             if batch == 0:
-                print "batch {0}, recons: {1}, z: {2}, x_recons: {3}, z: {4}".format(batch, batch_recons, batch_z, x_recons, print_z)
+                print ("batch {0}, recons: {1}, z: {2}, x_recons: {3}, z: {4}".format(batch, batch_recons, batch_z, x_recons, print_z))
         total_cost += batch_cost * batch_size / n_samples
-        print "epoch {0}, cost: {1}".format(epoch, total_cost)
+        print ("epoch {0}, cost: {1}".format(epoch, total_cost))
     

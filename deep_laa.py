@@ -70,7 +70,7 @@ with tf.name_scope('encoder_x_z'):
     eps = tf.random_normal(shape=(batch_size, n_z), mean=0.0, stddev=1.0, dtype=tf.float32)
     z = tf.add(z_mean, tf.mul(tf.sqrt(tf.exp(z_log_sigma_sq)), eps))
     
-    print "x -> z, OK"
+    print ("x -> z, OK")
 
 # z, y -> x
 with tf.name_scope('decoder_zy_x'):
@@ -108,7 +108,7 @@ with tf.name_scope('decoder_zy_x'):
         tmp_reconstr.append(tf.reduce_mean(tf.mul(mask, _tmp_cross_entropy), reduction_indices=1, keep_dims=True))
     reconstr_x = tf.concat(1, tmp_reconstr)
 
-    print "z, y -> x, OK"
+    print ("z, y -> x, OK")
 
 # x -> y
 with tf.name_scope('classifier'):
@@ -134,7 +134,7 @@ with tf.name_scope('classifier'):
     y_classifier = tf.nn.softmax(
         tf.add(tf.matmul(h_2_classifier, weights_y_classifier), biases_y_classifier))
     
-    print "x -> y, OK"
+    print ("x -> y, OK")
 
 # loss VAE by given y_prob
 y_prob = tf.placeholder(dtype=tf.float32, shape=(batch_size, category_size))
@@ -191,7 +191,7 @@ with tf.Session() as sess:
 #                     feed_dict={x:batch_x, mask:batch_mask})
 #                 print debug_y_classifier
                 
-        print "epoch: {0} accuracy: {1}".format(epoch, float(total_hit) / n_samples)
+        print ("epoch: {0} accuracy: {1}".format(epoch, float(total_hit) / n_samples))
     
     epochs = 500
     total_batches = int(n_samples / batch_size)
@@ -229,7 +229,7 @@ with tf.Session() as sess:
 #                     feed_dict={x:batch_x, mask:batch_mask, y_prob:y_prob_classifier})
 #                 print debug_y_classifier
              
-        print "epoch: {0} accuracy: {1}".format(epoch, float(total_hit) / n_samples)
+        print ("epoch: {0} accuracy: {1}".format(epoch, float(total_hit) / n_samples))
             
-print "Done!"            
+print ("Done!")            
                 

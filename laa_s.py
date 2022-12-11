@@ -2,17 +2,41 @@ import tensorflow as tf
 import numpy as np
 import deep_laa_support as dls
 import sys
+import os
+import pandas as pd
 
 # read data
+# filename = "data/crowd_truth_inference/s5_AdultContent"
+filename = "data/crowdscale2013/sentiment"
+# filename = "data/SpectralMethodsMeetEM/web"
 # filename = "bluebird_data"
-#  filename = "flower_data"
+# filename = "flower_data"
 # filename = "web_processed_data_feature_2"
-data_all = np.load(filename+'.npz')
-user_labels = data_all['user_labels']
-label_mask = data_all['label_mask']
-true_labels = data_all['true_labels']
-category_size = data_all['category_num']
-source_num = data_all['source_num']
+if os.path.exists(filename+".npz"):
+    data_all = np.load(filename+'.npz')
+    user_labels = data_all['user_labels']
+    label_mask = data_all['label_mask']
+    true_labels = data_all['true_labels']
+    category_size = data_all['category_num']
+    source_num = data_all['source_num']
+else:
+    label_csv = pd.read_csv(os.path.join(filename, "label.csv"))
+    truth_csv = pd.read_csv(os.path.join(filename, "truth.csv"))
+    source_num = len(set(label_csv.loc[:, "worker"]))
+    object_num = len(set(label_csv.loc[:, "item"]))
+    category_size = len(set(label_csv.loc[:, "label"]))
+    user_labels = np.zeros((object_num, source_num * category_size))
+    label_mask = np.zeros((object_num, source_num * category_size))
+    true_labels = np.zeros((object_num, 1))
+    for _,row in label_csv.iterrows():
+        # print(int(row["worker"]) * (category_size - 1) + int(row["label"]))
+        user_labels[int(row["item"]), int(row["worker"]) * category_size + int(row["label"])] = 1
+        for j in range(category_size):
+            label_mask[int(row["item"]), int(row["worker"]) * category_size + j] = 1
+        
+    for _,row in truth_csv.iterrows():
+        true_labels[int(row["item"])]=int(row["truth"])
+
 n_samples, _ = np.shape(true_labels)
 
 majority_y = dls.get_majority_y(user_labels, source_num, category_size)
@@ -48,11 +72,12 @@ with tf.name_scope('decoder_y_x'):
     tmp_reconstr = []
     for i in range(category_size):
         _tmp_reconstr_x = reconstruct_x_y(constant_y[i])
-        _tmp_cross_entropy = - tf.mul(x, tf.log(1e-10 + _tmp_reconstr_x))
-        tmp_reconstr.append(tf.reduce_mean(tf.mul(mask, _tmp_cross_entropy), reduction_indices=1, keep_dims=True))
-    reconstr_x = tf.concat(1, tmp_reconstr)
+        _tmp_cross_entropy = - tf.multiply(x, tf.log(1e-10 + _tmp_reconstr_x))
+        tmp_reconstr.append(tf.reduce_mean(tf.multiply(mask, _tmp_cross_entropy), reduction_indices=1, keep_dims=True))
+    
+    reconstr_x = tf.concat(tmp_reconstr, 1)
 
-    print "y -> x, OK"
+    print("y -> x, OK")
 
 # x -> y
 with tf.name_scope('classifier'):
@@ -64,7 +89,7 @@ with tf.name_scope('classifier'):
     y_classifier = tf.nn.softmax(
         tf.add(tf.matmul(x, weights_y_classifier), biases_y_classifier))
     
-    print "x -> y, OK"
+    print("x -> y, OK")
 
 # constraints
 # classifier
@@ -72,13 +97,13 @@ loss_w_classifier_l1 = tf.reduce_sum(tf.abs(weights_y_classifier))
 
 # loss classifier
 y_target = tf.placeholder(dtype=tf.float32, shape=(batch_size, category_size))
-_tmp_classifier_cross_entropy = - tf.mul(y_target, tf.log(1e-10 + y_classifier))
+_tmp_classifier_cross_entropy = - tf.multiply(y_target, tf.log(1e-10 + y_classifier))
 loss_classifier_x_y = tf.reduce_mean(tf.reduce_sum(_tmp_classifier_cross_entropy, reduction_indices=1))
 
-_tmp_loss_backprop = tf.mul(y_classifier, reconstr_x)
+_tmp_loss_backprop = tf.multiply(y_classifier, reconstr_x)
 loss_classifier_y_x = tf.reduce_mean(tf.reduce_sum(_tmp_loss_backprop, reduction_indices=1))
 y_prior = tf.placeholder(dtype=tf.float32, shape=(batch_size, category_size))
-loss_y_kl = tf.reduce_mean(tf.reduce_sum(tf.mul(y_classifier, tf.log(1e-10 + y_classifier)) - tf.mul(y_classifier, tf.log(1e-10 + y_prior)), reduction_indices=1))
+loss_y_kl = tf.reduce_mean(tf.reduce_sum(tf.multiply(y_classifier, tf.log(1e-10 + y_classifier)) - tf.multiply(y_classifier, tf.log(1e-10 + y_prior)), reduction_indices=1))
 y_kl_strength = tf.placeholder(dtype=tf.float32)
 # use proper parameters
 loss_classifier = loss_classifier_y_x \
@@ -99,12 +124,12 @@ hit_num = tf.reduce_sum(tf.to_int32(tf.equal(inferred_category, y_label)))
 with tf.Session() as sess:
     tf.initialize_all_variables().run()
     # initialize x -> y
-    print "Initialize x -> y ..."
+    print("Initialize x -> y ...")
     epochs = 50
     total_batches = int(n_samples / batch_size)
-    for epoch in xrange(epochs):
+    for epoch in range(epochs):
         total_hit = 0
-        for batch in xrange(total_batches):
+        for batch in range(total_batches):
             batch_x, batch_mask, batch_y_label, batch_majority_y = user_labels, label_mask, true_labels, majority_y
             # x -> y, update classifier
             _, batch_y_classifier, batch_hit_num = sess.run(
@@ -112,14 +137,14 @@ with tf.Session() as sess:
                 feed_dict={x:batch_x, mask:batch_mask, y_label:batch_y_label, y_target:batch_majority_y})
             total_hit += batch_hit_num
                 
-        print "epoch: {0} accuracy: {1}".format(epoch, float(total_hit) / n_samples)
+        print("epoch: {0} accuracy: {1}".format(epoch, float(total_hit) / n_samples))
     
-    print "Train the whole network ..."
+    print("Train the whole network ...")
     epochs = 100
     total_batches = int(n_samples / batch_size)
-    for epoch in xrange(epochs):
+    for epoch in range(epochs):
         total_hit = 0
-        for batch in xrange(total_batches):
+        for batch in range(total_batches):
             batch_x, batch_mask, batch_y_label, batch_majority_y = user_labels, label_mask, true_labels, majority_y
             # get y_prob from classifier x -> y
             _y_prob_classifier = sess.run([y_classifier], feed_dict={x:batch_x})
@@ -129,7 +154,7 @@ with tf.Session() as sess:
                 feed_dict={x:batch_x, mask:batch_mask, y_label:batch_y_label, y_prior:batch_majority_y, y_kl_strength:0.0001})
             total_hit += batch_hit_num
              
-        print "epoch: {0} accuracy: {1}".format(epoch, float(total_hit)/n_samples)
+        print("epoch: {0} accuracy: {1}".format(epoch, float(total_hit)/n_samples))
             
-print "Done!"            
+print("Done!")
                 

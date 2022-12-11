@@ -199,7 +199,7 @@ with tf.Session() as sess:
                            y_kl_strength:0.0001,
                            y_encoder_constraint_strength:0.001})
             total_hit += batch_hit_num             
-        print "epoch: {0} accuracy: {1}".format(epoch, float(total_hit)/n_samples)
+        print ("epoch: {0} accuracy: {1}".format(epoch, float(total_hit)/n_samples))
     
     
     epochs = 300
@@ -224,7 +224,7 @@ with tf.Session() as sess:
             
             total_hit += batch_hit_num
              
-        print "epoch: {0} accuracy: {1}".format(epoch, float(total_hit)/n_samples)
+        print ("epoch: {0} accuracy: {1}".format(epoch, float(total_hit)/n_samples))
         
         if epoch == epochs-1:
             debug_y1, debug_y2, _ = sess.run(
@@ -239,7 +239,7 @@ with tf.Session() as sess:
                            x1_decoder_constraint_strength:0.1,
                            x2_decoder_constraint_strength:0.1})
             # print debug_z
-            print "y1:", debug_y1
-            print "y2:", debug_y2
+            print ("y1:", debug_y1)
+            print ("y2:", debug_y2)
         
-print "Done!" 
+print ("Done!" )

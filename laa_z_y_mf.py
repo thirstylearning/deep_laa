@@ -118,7 +118,7 @@ with tf.variable_scope('encoder_x_z_y'):
         else:
             tmp_y_2 += tf.mul(tmp_y[i], tf.tile(tmp_z, [1, category_size]))
     y = tf.nn.softmax(tmp_y_2)
-    print "x, z -> y, OK"
+    print("x, z -> y, OK")
 
     # loss
     constraint_template_classifier = np.matlib.repmat(np.eye(category_size), source_num, 1)
@@ -165,7 +165,7 @@ with tf.variable_scope('decoder_yz_x'):
         _tmp_cross_entropy = - tf.mul(x, tf.log(1e-10 + _tmp_reconstr_x))
         tmp_reconstr.append(tf.reduce_mean(tf.mul(mask, _tmp_cross_entropy), reduction_indices=1, keep_dims=True))
     reconstr_x = tf.concat(1, tmp_reconstr)
-    print "y, z -> x, OK"
+    prin( "y, z -> x, OK")
 
     # loss
     constraint_template_decoder = np.matlib.repmat(np.eye(category_size), 1, source_num)
@@ -250,7 +250,7 @@ with tf.Session() as sess:
 #                     feed_dict={x:batch_x, mask:batch_mask})
 #                 print debug_y_classifier
                 
-        print "epoch: {0} accuracy: {1}".format(epoch, float(total_hit) / n_samples)
+        print ("epoch: {0} accuracy: {1}".format(epoch, float(total_hit) / n_samples))
     
     epochs = 500
     total_batches = int(n_samples / batch_size)
@@ -268,7 +268,7 @@ with tf.Session() as sess:
              
             total_hit += batch_hit_num
               
-        print "epoch: {0} accuracy: {1}".format(epoch, float(total_hit)/n_samples)
+        print("epoch: {0} accuracy: {1}".format(epoch, float(total_hit)/n_samples))
          
         if epoch == epochs-1:
             debug_z, debug_u, debug_loss_classifier_y_x, debug_loss_classifier = sess.run(
@@ -282,4 +282,4 @@ with tf.Session() as sess:
 #             print debug_z_weights
 #             print debug_z_bias
             
-print "Done!" 
+print ("Done!" )
